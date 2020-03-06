@@ -1738,6 +1738,7 @@ ProblemUpdate<REAL>::applyTransaction( const Reduction<REAL>* first,
    else if( conflictType == ConflictType::kPostpone )
       return ApplyResult::kPostponed;
 
+   Message::debug( this, "applying transaction\n" );
    for( auto iter = first; iter != last; ++iter )
    {
       const auto& reduction = *iter;
@@ -1746,6 +1747,9 @@ ProblemUpdate<REAL>::applyTransaction( const Reduction<REAL>* first,
       {
          setRowState( reduction.row, State::kModified );
          setColState( reduction.col, State::kModified );
+
+         Message::debug( this, "coefficient modification A_{}_{} = {}\n",
+                         reduction.row, reduction.col, reduction.newval );
 
          matrix_buffer.addEntry( reduction.row, reduction.col,
                                  reduction.newval );
@@ -1765,9 +1769,14 @@ ProblemUpdate<REAL>::applyTransaction( const Reduction<REAL>* first,
          case ColReduction::OBJECTIVE:
             setColState( reduction.col, State::kModified );
             objective.coefficients[reduction.col] = reduction.newval;
+            Message::debug( this, "objective modification c_{} = {}\n",
+                            reduction.col, reduction.newval );
             break;
          case ColReduction::FIXED:
          {
+            Message::debug( this, "fixing col x_{} = {}\n", reduction.col,
+                            reduction.newval );
+
             if( fixCol( reduction.col, reduction.newval ) ==
                 PresolveStatus::kInfeasible )
                return ApplyResult::kInfeasible;
@@ -1775,6 +1784,9 @@ ProblemUpdate<REAL>::applyTransaction( const Reduction<REAL>* first,
          }
          case ColReduction::LOWER_BOUND:
          {
+            Message::debug( this, "changing lb x_{} >= {}\n", reduction.col,
+                            reduction.newval );
+
             if( changeLB( reduction.col, reduction.newval ) ==
                 PresolveStatus::kInfeasible )
                return ApplyResult::kInfeasible;
@@ -1782,6 +1794,9 @@ ProblemUpdate<REAL>::applyTransaction( const Reduction<REAL>* first,
          }
          case ColReduction::UPPER_BOUND:
          {
+            Message::debug( this, "changing ub x_{} <= {}\n", reduction.col,
+                            reduction.newval );
+
             if( changeUB( reduction.col, reduction.newval ) ==
                 PresolveStatus::kInfeasible )
                return ApplyResult::kInfeasible;
@@ -2450,6 +2465,8 @@ ProblemUpdate<REAL>::applyTransaction( const Reduction<REAL>* first,
          }
       }
    }
+
+   Message::debug( this, "transaction was applied\n" );
 
    // no conflicts found
    return ApplyResult::kApplied;
