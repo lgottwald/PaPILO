@@ -62,12 +62,14 @@ presolve_and_solve(
    boost::optional<Problem<REAL>> problem;
 
    fmt::print( "reading file '{}'...\n", opts.instance_file );
+   fflush( stdout );
    {
       Timer t( readtime );
       problem = MpsParser<REAL>::loadProblem( opts.instance_file );
    }
 
    fmt::print( "finished reading in {:.3} seconds\n", readtime );
+   fflush( stdout );
 
    if( !problem )
       return ResultStatus::kError;

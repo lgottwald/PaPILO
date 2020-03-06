@@ -123,7 +123,7 @@ main( int argc, char* argv[] )
    // get the options passed by the user
    OptionsInfo optionsInfo;
    fmt::print( "parsing command line options\n" );
-   fflush(stdout);
+   fflush( stdout );
    try
    {
       optionsInfo = parseOptions( argc, argv );
@@ -136,7 +136,7 @@ main( int argc, char* argv[] )
    }
 
    fmt::print( "finished parsing command line options\n" );
-   fflush(stdout);
+   fflush( stdout );
    if( !optionsInfo.is_complete )
       return 0;
 
