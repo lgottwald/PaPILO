@@ -85,6 +85,7 @@ class Message
       else
       {
          std::fwrite( buf.data(), 1, size, stdout );
+         fflush( stdout );
       }
    }
 

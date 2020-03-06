@@ -16,7 +16,7 @@ jobs:
     env:
       BOOST_ROOT:
       MAKEFLAGS: -j4
-      CTEST_PARALLEL_LEVEL: 4
+      CTEST_PARALLEL_LEVEL: 1
       SCIP_VERSION: 6.0.2
       TBBROOT: ${{github.workspace}}\Dependencies\tbb
 
