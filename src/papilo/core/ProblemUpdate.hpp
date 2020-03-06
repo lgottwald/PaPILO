@@ -1718,6 +1718,7 @@ ApplyResult
 ProblemUpdate<REAL>::applyTransaction( const Reduction<REAL>* first,
                                        const Reduction<REAL>* last )
 {
+   Message::debug( this, "call to applyTransaction()\n" );
    Objective<REAL>& objective = problem.getObjective();
    Vec<REAL>& lbs = problem.getLowerBounds();
    Vec<REAL>& ubs = problem.getUpperBounds();
