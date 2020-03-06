@@ -396,7 +396,7 @@ Presolve<REAL>::applyPostponed( ProblemUpdate<REAL>& probUpdate )
    probUpdate.setPostponeSubstitutions( false );
 
    // apply all postponed reductions
-   for( int presolver = 0; presolver != presolvers.size(); ++presolver )
+   for( std::size_t presolver = 0; presolver != presolvers.size(); ++presolver )
    {
       int first = postponedReductionToPresolver[presolver];
       int last = postponedReductionToPresolver[presolver + 1];
