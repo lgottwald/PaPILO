@@ -522,14 +522,18 @@ Presolve<REAL>::applyPresolversReductions( ProblemUpdate<REAL>& probUpdate )
 
          auto stats = applyReductions( i, reductions[i], probUpdate );
 
+         Message::debug( this, "finished applying reductions of presolver {}\n",
+                         presolvers[i]->getName() );
+
          if( stats.first < 0 || stats.second < 0 )
+         {
+            Message::debug( this, "presolver {} detected infeasibility\n",
+                            presolvers[i]->getName() );
             return false;
+         }
 
          presolverStats[i].first += stats.first;
          presolverStats[i].second += stats.second;
-
-         Message::debug( this, "finished applying reductions of presolver {}\n",
-                         presolvers[i]->getName() );
 
          results[i] = PresolveStatus::kUnchanged;
       }
