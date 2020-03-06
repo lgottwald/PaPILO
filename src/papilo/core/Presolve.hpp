@@ -316,6 +316,9 @@ Presolve<REAL>::applyReductions( int p, const Reductions<REAL>& reductions,
    const auto& reds = reductions.getReductions();
    const auto& tsx = reductions.getTransactions();
 
+   Message::debug( this, "got {} reductions\n",
+                   reductions.getReductions().size() );
+
    for( const auto& transaction : reductions.getTransactions() )
    {
       int start = transaction.start;
@@ -326,6 +329,7 @@ Presolve<REAL>::applyReductions( int p, const Reductions<REAL>& reductions,
 
       for( ; k != start; ++k )
       {
+         Message::debug( this, "applying singleton reduction {}\n", k );
          result = probUpdate.applyTransaction( &reds[k], &reds[k + 1] );
          if( result == ApplyResult::kApplied )
             ++stats.ntsxapplied;
@@ -338,6 +342,9 @@ Presolve<REAL>::applyReductions( int p, const Reductions<REAL>& reductions,
 
          ++nbtsxTotal;
       }
+
+      Message::debug( this, "applying transaction of reductions {} to {}\n",
+                      start, end - 1 );
 
       result = probUpdate.applyTransaction( &reds[start], &reds[end] );
       if( result == ApplyResult::kApplied )
@@ -357,6 +364,8 @@ Presolve<REAL>::applyReductions( int p, const Reductions<REAL>& reductions,
 
    for( ; k != static_cast<int>( reds.size() ); ++k )
    {
+      Message::debug( this, "applying singleton reduction {}\n", k );
+
       result = probUpdate.applyTransaction( &reds[k], &reds[k + 1] );
       if( result == ApplyResult::kApplied )
          ++stats.ntsxapplied;
