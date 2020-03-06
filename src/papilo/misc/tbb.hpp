@@ -32,20 +32,15 @@
 #define PAPILO_DEFINED_NOMINMAX
 #endif
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#define PAPILO_DEFINED_WIN32_LEAN_AND_MEAN
-#endif
+// #ifndef WIN32_LEAN_AND_MEAN
+// #define WIN32_LEAN_AND_MEAN
+// #define PAPILO_DEFINED_WIN32_LEAN_AND_MEAN
+// #endif
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#define PAPILO_DEFINED_WIN32_LEAN_AND_MEAN
-#endif
-
-#ifndef NOGDI
-#define NOGDI
-#define PAPILO_DEFINED_NOGDI
-#endif
+// #ifndef NOGDI
+// #define NOGDI
+// #define PAPILO_DEFINED_NOGDI
+// #endif
 
 #ifdef _MSC_VER
 #pragma push_macro( "__TBB_NO_IMPLICIT_LINKAGE" )
@@ -66,19 +61,19 @@
 #pragma pop_macro( "__TBB_NO_IMPLICIT_LINKAGE" )
 #endif
 
-#ifdef PAPILO_DEFINED_NOGDI
-#undef NOGDI
-#undef PAPILO_DEFINED_NOGDI
-#endif
+// #ifdef PAPILO_DEFINED_NOGDI
+// #undef NOGDI
+// #undef PAPILO_DEFINED_NOGDI
+// #endif
 
 #ifdef PAPILO_DEFINED_NOMINMAX
 #undef NOMINMAX
 #undef PAPILO_DEFINED_NOMINMAX
 #endif
 
-#ifdef PAPILO_DEFINED_WIN32_LEAN_AND_MEAN
-#undef WIN32_LEAN_AND_MEAN
-#undef PAPILO_DEFINED_WIN32_LEAN_AND_MEAN
-#endif
+// #ifdef PAPILO_DEFINED_WIN32_LEAN_AND_MEAN
+// #undef WIN32_LEAN_AND_MEAN
+// #undef PAPILO_DEFINED_WIN32_LEAN_AND_MEAN
+// #endif
 
 #endif
