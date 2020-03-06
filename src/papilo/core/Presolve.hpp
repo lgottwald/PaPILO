@@ -321,6 +321,9 @@ Presolve<REAL>::applyReductions( int p, const Reductions<REAL>& reductions,
       int start = transaction.start;
       int end = transaction.end;
 
+      assert( start >= 0 );
+      assert( start < end );
+
       for( ; k != start; ++k )
       {
          result = probUpdate.applyTransaction( &reds[k], &reds[k + 1] );
@@ -349,6 +352,8 @@ Presolve<REAL>::applyReductions( int p, const Reductions<REAL>& reductions,
       k = end;
       ++nbtsxTotal;
    }
+
+   assert( k <= static_cast<int>( reds.size() ) );
 
    for( ; k != static_cast<int>( reds.size() ); ++k )
    {
