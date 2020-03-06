@@ -37,9 +37,9 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
+#include <boost/optional.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/utility/string_ref.hpp>
-#include <boost/optional.hpp>
 #include <fstream>
 #include <iostream>
 #include <iterator>
