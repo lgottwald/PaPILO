@@ -1729,16 +1729,23 @@ ProblemUpdate<REAL>::applyTransaction( const Reduction<REAL>* first,
                                  RowActivity<REAL>& activity ) {
       update_activity( actChange, rowid, activity );
    };
-
+   Message::debug( this, "checking transaction\n" );
    // check if transaction conflicts with current state
    ConflictType conflictType = checkTransactionConflicts( first, last );
 
    if( conflictType == ConflictType::kConflict )
+   {
+      Message::debug( this, "transaction not applied: conflict\n" );
       return ApplyResult::kRejected;
+   }
    else if( conflictType == ConflictType::kPostpone )
+   {
+      Message::debug( this, "transaction not applied: postponed\n" );
       return ApplyResult::kPostponed;
+   }
 
    Message::debug( this, "applying transaction\n" );
+
    for( auto iter = first; iter != last; ++iter )
    {
       const auto& reduction = *iter;
