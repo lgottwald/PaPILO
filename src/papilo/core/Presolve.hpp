@@ -384,9 +384,9 @@ Presolve<REAL>::finishRound( ProblemUpdate<REAL>& probUpdate )
    for( auto& reduction : reductions )
       reduction.clear();
 
-   std::fill( results.begin(), results.end(), PresolveStatus::kUnchanged );
+   Message::debug( this, "finishing round\n" );
 
-   // TODO compress if problem size decreased by some factor
+   std::fill( results.begin(), results.end(), PresolveStatus::kUnchanged );
 }
 
 template <typename REAL>
