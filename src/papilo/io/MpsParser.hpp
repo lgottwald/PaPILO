@@ -31,6 +31,7 @@
 #include "papilo/core/VariableDomains.hpp"
 #include "papilo/misc/Flags.hpp"
 #include "papilo/misc/Hash.hpp"
+#include "papilo/io/Message.hpp"
 #include "papilo/misc/Num.hpp"
 #include "pdqsort/pdqsort.h"
 #include <algorithm>
@@ -72,7 +73,7 @@ struct RealParseType<REAL, true>
 
 /// Parser for mps files in fixed and free format
 template <typename REAL>
-class MpsParser
+class MpsParser : EnableDebugOutput
 {
    static_assert(
        num_traits<typename RealParseType<REAL>::type>::is_floating_point,
@@ -240,6 +241,9 @@ MpsParser<REAL>::checkFirstWord( std::string& strline,
    boost::string_ref word( &( *it_start ), length );
 
    word_ref = word;
+
+   Message::debug( this, "looking for section keyword on string '{}'\n",
+                   strline );
 
    if( word.front() == 'R' ) // todo
    {
@@ -842,6 +846,7 @@ MpsParser<REAL>::parse( boost::iostreams::filtering_istream& file )
    parsekey keyword = parsekey::kNone;
    parsekey keyword_old = parsekey::kNone;
 
+   Message::debug( this, "starting parse loop\n" );
    // parsing loop
    while( keyword != parsekey::kFail && keyword != parsekey::kEnd &&
           !file.eof() && file.good() )
@@ -850,23 +855,30 @@ MpsParser<REAL>::parse( boost::iostreams::filtering_istream& file )
       switch( keyword )
       {
       case parsekey::kRows:
+         Message::debug( this, "parsing ROWS section\n" );
          keyword = parseRows( file, row_type );
          break;
       case parsekey::kCols:
+         Message::debug( this, "parsing COLS section\n" );
          keyword = parseCols( file, row_type );
          break;
       case parsekey::kRhs:
+         Message::debug( this, "parsing RHS section\n" );
          keyword = parseRhs( file );
          break;
       case parsekey::kRanges:
+         Message::debug( this, "parsing RANGES section\n" );
          keyword = parseRanges( file );
          break;
       case parsekey::kBounds:
+         Message::debug( this, "parsing BOUNDS section\n" );
          keyword = parseBounds( file );
          break;
       case parsekey::kFail:
+         Message::debug( this, "encountered parsing failure, stopping\n" );
          break;
       default:
+         Message::debug( this, "looking for section keyword\n" );
          keyword = parseDefault( file );
          break;
       }

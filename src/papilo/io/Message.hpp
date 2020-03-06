@@ -195,6 +195,7 @@ class Message
    debug( const T*, Args&&... args )
    {
       fmt::print( std::forward<Args>( args )... );
+      std::fflush( stdout );
    }
 };
 
