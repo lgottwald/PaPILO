@@ -29,9 +29,9 @@
 #include "papilo/core/Objective.hpp"
 #include "papilo/core/Problem.hpp"
 #include "papilo/core/VariableDomains.hpp"
+#include "papilo/io/Message.hpp"
 #include "papilo/misc/Flags.hpp"
 #include "papilo/misc/Hash.hpp"
-#include "papilo/io/Message.hpp"
 #include "papilo/misc/Num.hpp"
 #include "pdqsort/pdqsort.h"
 #include <algorithm>
