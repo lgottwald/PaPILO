@@ -75,7 +75,7 @@ struct PresolveResult
 };
 
 template <typename REAL>
-class Presolve
+class Presolve : EnableDebugOutput
 {
  public:
    void
@@ -726,6 +726,7 @@ Presolve<REAL>::apply( Problem<REAL>& problem )
          switch( roundCounter )
          {
          case 0:
+            Message::debug( this, "calling fast presolvers\n" );
 #ifdef PARALLEL_FAST_PRESOLVERS
             tbb::parallel_for(
                 tbb::blocked_range<int>( fastPresolvers.first,
@@ -749,6 +750,7 @@ Presolve<REAL>::apply( Problem<REAL>& problem )
 #endif
             break;
          case 1:
+            Message::debug( this, "calling medium presolvers\n" );
 #ifdef PARALLEL_MEDIUM_PRESOLVERS
             tbb::parallel_for(
                 tbb::blocked_range<int>( mediumPresolvers.first,
@@ -773,6 +775,7 @@ Presolve<REAL>::apply( Problem<REAL>& problem )
 #endif
             break;
          case 2:
+            Message::debug( this, "calling exhaustive presolvers\n" );
 #ifdef PARALLEL_EXHAUSTIVE_PRESOLVERS
             tbb::parallel_for(
                 tbb::blocked_range<int>( exhaustivePresolvers.first,

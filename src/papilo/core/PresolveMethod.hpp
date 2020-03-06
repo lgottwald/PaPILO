@@ -84,7 +84,7 @@ enum class PresolverType
 };
 
 template <typename REAL>
-class PresolveMethod
+class PresolveMethod : EnableDebugOutput
 {
  public:
    PresolveMethod()
@@ -156,11 +156,14 @@ class PresolveMethod
 
       ++ncalls;
 
+      Message::debug( this, "calling presolver {}\n", this->name );
       auto start = tbb::tick_count::now();
       PresolveStatus result =
           execute( problem, problemUpdate, num, reductions );
       auto end = tbb::tick_count::now();
       auto duration = end - start;
+      Message::debug( this, "presolver {} finished in {} seconds\n", this->name,
+                      duration.seconds() );
       execTime = execTime + duration.seconds();
 
       switch( result )
