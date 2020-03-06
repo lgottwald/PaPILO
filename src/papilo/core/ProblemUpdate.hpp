@@ -57,7 +57,7 @@ enum class ApplyResult
 };
 
 template <typename REAL>
-class ProblemUpdate
+class ProblemUpdate : EnableDebugOutput
 {
    Problem<REAL>& problem;
    Postsolve<REAL>& postsolve;

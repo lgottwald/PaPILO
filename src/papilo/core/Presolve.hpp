@@ -503,6 +503,7 @@ template <typename REAL>
 bool
 Presolve<REAL>::applyPresolversReductions( ProblemUpdate<REAL>& probUpdate )
 {
+   Message::debug( this, "applying reductions\n" );
    probUpdate.setPostponeSubstitutions( true );
 
    postponedReductionToPresolver.push_back( 0 );
@@ -521,6 +522,10 @@ Presolve<REAL>::applyPresolversReductions( ProblemUpdate<REAL>& probUpdate )
 
          presolverStats[i].first += stats.first;
          presolverStats[i].second += stats.second;
+
+         Message::debug( this, "finished applying reductions of presolver {}\n",
+                         presolvers[i]->getName() );
+
          results[i] = PresolveStatus::kUnchanged;
       }
 
@@ -528,6 +533,8 @@ Presolve<REAL>::applyPresolversReductions( ProblemUpdate<REAL>& probUpdate )
    }
 
    probUpdate.flushChangedCoeffs();
+
+   Message::debug( this, "applying postponed reductions\n" );
 
    applyPostponed( probUpdate );
 
