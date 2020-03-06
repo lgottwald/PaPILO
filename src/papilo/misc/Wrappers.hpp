@@ -59,14 +59,18 @@ presolve_and_solve(
 {
 
    double readtime = 0;
-   Problem<REAL> problem;
+   boost::optional<Problem<REAL>> problem;
 
+   fmt::print( "reading file '{}'...\n", opts.instance_file );
    {
       Timer t( readtime );
       problem = MpsParser<REAL>::loadProblem( opts.instance_file );
    }
 
-   fmt::print( "reading took {:.3} seconds\n", readtime );
+   fmt::print( "finished reading in {:.3} seconds\n", readtime );
+
+   if( !problem )
+      return ResultStatus::kError;
 
    Presolve<REAL> presolve;
    presolve.addDefaultPresolvers();
@@ -184,7 +188,7 @@ presolve_and_solve(
 
    presolve.getPresolveOptions().tlim = opts.tlim;
 
-   auto result = presolve.apply( problem );
+   auto result = presolve.apply( problem.get() );
 
    switch( result.status )
    {
@@ -211,7 +215,7 @@ presolve_and_solve(
       Timer t( writetime );
       const auto t0 = tbb::tick_count::now();
 
-      MpsWriter<REAL>::writeProb( opts.reduced_problem_file, problem,
+      MpsWriter<REAL>::writeProb( opts.reduced_problem_file, problem.get(),
                                   result.postsolve.origrow_mapping,
                                   result.postsolve.origcol_mapping );
 
@@ -254,7 +258,7 @@ presolve_and_solve(
          return ResultStatus::kError;
       }
 
-      solver->setUp( problem, result.postsolve.origrow_mapping,
+      solver->setUp( problem.get(), result.postsolve.origrow_mapping,
                      result.postsolve.origcol_mapping );
 
       if( opts.tlim != std::numeric_limits<double>::max() )

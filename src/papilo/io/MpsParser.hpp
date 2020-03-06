@@ -39,6 +39,7 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/utility/string_ref.hpp>
+#include <boost/optional.hpp>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -78,7 +79,7 @@ class MpsParser
        "the parse type must be a floating point type" );
 
  public:
-   static Problem<REAL>
+   static boost::optional<Problem<REAL>>
    loadProblem( const std::string& filename )
    {
       MpsParser<REAL> parser;
@@ -86,7 +87,7 @@ class MpsParser
       Problem<REAL> problem;
 
       if( !parser.parseFile( filename ) )
-         return problem;
+         return boost::none;
 
       assert( parser.nnz >= 0 );
 
