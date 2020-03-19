@@ -30,6 +30,15 @@
 namespace papilo
 {
 using RandomGenerator = pcg32;
+
+template <typename RandG>
+int
+random_int( RandG& gen, int min, int max )
+{
+   std::uniform_int_distribution<int> dist( min, max );
+   return dist( gen );
+}
+
 } // namespace papilo
 
 #endif
