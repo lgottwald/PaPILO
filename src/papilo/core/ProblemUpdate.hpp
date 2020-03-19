@@ -35,8 +35,8 @@
 #include "papilo/misc/Flags.hpp"
 #include "papilo/misc/MultiPrecision.hpp"
 #include "papilo/misc/Num.hpp"
+#include "papilo/misc/Random.hpp"
 #include <cstdint>
-#include <random>
 
 namespace papilo
 {
@@ -378,7 +378,7 @@ ProblemUpdate<REAL>::ProblemUpdate( Problem<REAL>& problem,
    lastcompress_ndelcols = 0;
    lastcompress_ndelrows = 0;
 
-   std::ranlux24 randgen( presolveOptions.randomseed );
+   RandomGenerator randgen( presolveOptions.randomseed );
    random_col_perm.resize( problem.getNCols() );
    for( int i = 0; i < problem.getNCols(); ++i )
       random_col_perm[i] = i;
