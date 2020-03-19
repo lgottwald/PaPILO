@@ -378,6 +378,12 @@ install(FILES
    DESTINATION include/papilo-external/pdqsort)
 
 install(FILES
+   ${PROJECT_SOURCE_DIR}/external/pcg/pcg_extras.hpp
+   ${PROJECT_SOURCE_DIR}/external/pcg/pcg_uint128.hpp
+   ${PROJECT_SOURCE_DIR}/external/pcg/pcg_random.hpp
+   DESTINATION include/papilo-external/pcg)
+
+install(FILES
    ${PROJECT_SOURCE_DIR}/external/ska/bytell_hash_map.hpp
    ${PROJECT_SOURCE_DIR}/external/ska/flat_hash_map.hpp
    ${PROJECT_SOURCE_DIR}/external/ska/unordered_map.hpp
