@@ -74,6 +74,7 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         Invoke-Command -ScriptBlock { Start-Process ${{github.workspace}}\Dependencies\scipoptsuite.exe -ArgumentList "/S" -Wait }
+        cl
       #echo "::add-path::${{github.workspace}}\Dependencies\tbb\bin\intel64\vc14"
 
     - name: Create Build Environment

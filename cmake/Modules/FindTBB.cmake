@@ -30,7 +30,7 @@ set(TBB_BUILT_STATIC_LIB 0)
 if(NOT TBB_LIBRARY)
    include(${CMAKE_CURRENT_LIST_DIR}/../../external/tbb/cmake/TBBBuild.cmake)
    file(TO_NATIVE_PATH ${CMAKE_CXX_COMPILER} cxx_comp)
-   tbb_build(TBB_ROOT ${CMAKE_CURRENT_LIST_DIR}/../../external/tbb CONFIG_DIR TBB_DIR MAKE_ARGS extra_inc=big_iron.inc tbb_build_dir=${CMAKE_CURRENT_BINARY_DIR} tbb_build_prefix=tbb compiler="${cxx_comp}")
+   tbb_build(TBB_ROOT ${CMAKE_CURRENT_LIST_DIR}/../../external/tbb CONFIG_DIR TBB_DIR MAKE_ARGS extra_inc=big_iron.inc tbb_build_dir=${CMAKE_CURRENT_BINARY_DIR} tbb_build_prefix=tbb)
    if(TBB_DIR)
       # building was successful
       find_library(TBB_LIBRARY
