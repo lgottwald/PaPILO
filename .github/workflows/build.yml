@@ -84,16 +84,14 @@ jobs:
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
-      shell: bash
       working-directory: ${{github.workspace}}/build
       # Note the current convention is to use the -S and -B options here to specify source
       # and build directories, but this is only available with CMake 3.13 and higher.
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DSOPLEX=off
+      run: cmake ${{github.workspace}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSOPLEX=off
 
     - name: Build
       working-directory: ${{github.workspace}}/build
-      shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build . --config $BUILD_TYPE
 
@@ -101,7 +99,6 @@ jobs:
       # TODO: fix the deadlock occurring on windows for some weird reason (maybe a loaderlock caused by TBB?)
       if: runner.os != 'Windows'
       working-directory: ${{github.workspace}}/build
-      shell: bash
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C $BUILD_TYPE --output-on-failure
+      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
