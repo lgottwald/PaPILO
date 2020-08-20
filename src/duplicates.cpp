@@ -805,7 +805,7 @@ compute_instancehash( const Problem<double>& prob )
    HashMap<uint64_t, size_t> distinct_row_hashes( nrows );
 
    // Compute column and row hashes
-   while( nrows2 != 0 && iters <= MAX_HASH_ITERS )
+   while( nrows2 != 0 )
    {
       tbb::parallel_for(
           tbb::blocked_range<int>( 0, nrows2 ),
@@ -851,18 +851,6 @@ compute_instancehash( const Problem<double>& prob )
             break;
 
          nrows2 += partitionsize;
-      }
-
-      for( size_t i = nrows2; i < lastnrows; ++i )
-      {
-         rowhashes[rowperm[i]] = i;
-      }
-
-      if( nrows2 == lastnrows )
-      {
-         --nrows2;
-         std::swap( rowperm[0], rowperm[nrows2] );
-         rowhashes[rowperm[nrows2]] = nrows2;
       }
 
       if( ncols2 == 0 )
@@ -914,18 +902,19 @@ compute_instancehash( const Problem<double>& prob )
          ncols2 += partitionsize;
       }
 
-      for( size_t i = ncols2; i < lastncols; ++i )
-      {
-         colhashes[colperm[i]] = i;
-      }
-
-      ++iters;
+      if( nrows2 == lastnrows && ncols2 == lastncols )
+         break;
    }
+
    // Sort hashes
    pdqsort( rowhashes.begin(), rowhashes.end(),
             []( uint64_t a, uint64_t b ) { return a < b; } );
    pdqsort( colhashes.begin(), colhashes.end(),
             []( uint64_t a, uint64_t b ) { return a < b; } );
+
+   // remove the artifical hash values for bounds objective and sides
+   colhashes.resize( ncols );
+   rowhashes.resize( nrows );
 
    // Put all values in the hasher
    Hasher<uint64_t> hasher( nnz );
@@ -967,12 +956,15 @@ main( int argc, char* argv[] )
       fmt::print( "error loading problem {}\n", argv[1] );
       return 1;
    }
-   Problem<double> prob1 = *prob1t;
+   const Problem<double>& prob1 = prob1t.get();
 
    if( argc == 2 )
    {
+      fmt::print( "Analyzing problem {}\n\n", prob1.getName() );
+      NumericalStatistics<double> stats( prob1 );
+      stats.printStatistics();
       uint64_t result = compute_instancehash( prob1 );
-      fmt::print( "{}\n", result );
+      fmt::print( "\nStructure hash: 0x{:x}\n", result );
    }
    else
    {
