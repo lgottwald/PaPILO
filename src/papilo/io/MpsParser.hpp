@@ -99,16 +99,16 @@ class MpsParser
       problem.setObjective( std::move( obj_vec ), parser.objoffset );
       if( compact )
          problem.setConstraintMatrix(
-            SparseStorage<REAL>{ std::move( parser.entries ), parser.nCols,
-                                 parser.nRows, true, 1.0, 0 },
-            std::move( parser.rowlhs ), std::move( parser.rowrhs ),
-            std::move( parser.row_flags ), true );
+             SparseStorage<REAL>{ std::move( parser.entries ), parser.nCols,
+                                  parser.nRows, true, 1.0, 0 },
+             std::move( parser.rowlhs ), std::move( parser.rowrhs ),
+             std::move( parser.row_flags ), true );
       else
          problem.setConstraintMatrix(
-            SparseStorage<REAL>{ std::move( parser.entries ), parser.nCols,
-                                 parser.nRows, true },
-            std::move( parser.rowlhs ), std::move( parser.rowrhs ),
-            std::move( parser.row_flags ), true );
+             SparseStorage<REAL>{ std::move( parser.entries ), parser.nCols,
+                                  parser.nRows, true },
+             std::move( parser.rowlhs ), std::move( parser.rowrhs ),
+             std::move( parser.row_flags ), true );
       problem.setVariableDomains( std::move( parser.lb4cols ),
                                   std::move( parser.ub4cols ),
                                   std::move( parser.col_flags ) );
