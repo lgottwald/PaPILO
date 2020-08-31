@@ -354,7 +354,7 @@ fill_identity_permutation( Vec<int>& out_perm )
 /// Returns True if variables in given permutation have same attributes
 static bool
 check_cols( const Problem<double>& prob1, const Problem<double>& prob2,
-            Vec<int> perm1, const Vec<int> perm2 )
+            Vec<int>& perm1, const Vec<int>& perm2 )
 {
    assert( perm1.size() == perm2.size() );
    int ncols = perm1.size();
@@ -362,8 +362,8 @@ check_cols( const Problem<double>& prob1, const Problem<double>& prob2,
    const VariableDomains<double>& vd1 = prob1.getVariableDomains();
    const VariableDomains<double>& vd2 = prob2.getVariableDomains();
 
-   const Vec<String> cnames1 = prob1.getVariableNames();
-   const Vec<String> cnames2 = prob2.getVariableNames();
+   const Vec<String>& cnames1 = prob1.getVariableNames();
+   const Vec<String>& cnames2 = prob2.getVariableNames();
 
    auto printVarsAndIndex = [&]( int i1, int i2 ) {
       fmt::print( "Differing Variables: Problem 1: {:6} at index {:<5} vs ",
@@ -432,8 +432,8 @@ check_cols( const Problem<double>& prob1, const Problem<double>& prob2,
 /// permutation
 static bool
 check_rows( const Problem<double>& prob1, const Problem<double>& prob2,
-            Vec<int> permrow1, Vec<int> permrow2, Vec<int> permcol1,
-            Vec<int> permcol2 )
+            Vec<int>& permrow1, Vec<int>& permrow2, Vec<int>& permcol1,
+            Vec<int>& permcol2 )
 {
    assert( permrow1.size() == permrow2.size() );
    assert( permcol1.size() == permcol2.size() );
@@ -454,10 +454,10 @@ check_rows( const Problem<double>& prob1, const Problem<double>& prob2,
 
    HashMap<int, double> coefmap;
 
-   const Vec<String> cnames1 = prob1.getVariableNames();
-   const Vec<String> cnames2 = prob2.getVariableNames();
-   const Vec<String> rnames1 = prob1.getConstraintNames();
-   const Vec<String> rnames2 = prob2.getConstraintNames();
+   const Vec<String>& cnames1 = prob1.getVariableNames();
+   const Vec<String>& cnames2 = prob2.getVariableNames();
+   const Vec<String>& rnames1 = prob1.getConstraintNames();
+   const Vec<String>& rnames2 = prob2.getConstraintNames();
 
    auto printConstraintsAndIndex = [&]( int i1, int i2 ) {
       fmt::print( "Differing Constraints: Problem 1: {:6} at index {:<5} vs ",
@@ -538,8 +538,8 @@ check_rows( const Problem<double>& prob1, const Problem<double>& prob2,
       }
 
       // Check Row coefficients
-      const SparseVectorView<double> row1 = cm1.getRowCoefficients( i1row );
-      const SparseVectorView<double> row2 = cm2.getRowCoefficients( i2row );
+      const SparseVectorView<double>& row1 = cm1.getRowCoefficients( i1row );
+      const SparseVectorView<double>& row2 = cm2.getRowCoefficients( i2row );
 
       // Assume: If there is different amounts of variables in constraint it is
       // not the same (not entirely true)
