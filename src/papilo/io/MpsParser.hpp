@@ -80,7 +80,7 @@ class MpsParser
 
  public:
    static boost::optional<Problem<REAL>>
-   loadProblem( const std::string& filename )
+   loadProblem( const std::string& filename, bool compact = false )
    {
       MpsParser<REAL> parser;
 
@@ -97,11 +97,18 @@ class MpsParser
          obj_vec[i.first] = i.second;
 
       problem.setObjective( std::move( obj_vec ), parser.objoffset );
-      problem.setConstraintMatrix(
-          SparseStorage<REAL>{ std::move( parser.entries ), parser.nCols,
-                               parser.nRows, true },
-          std::move( parser.rowlhs ), std::move( parser.rowrhs ),
-          std::move( parser.row_flags ), true );
+      if( compact )
+         problem.setConstraintMatrix(
+            SparseStorage<REAL>{ std::move( parser.entries ), parser.nCols,
+                                 parser.nRows, true, 1.0, 0 },
+            std::move( parser.rowlhs ), std::move( parser.rowrhs ),
+            std::move( parser.row_flags ), true );
+      else
+         problem.setConstraintMatrix(
+            SparseStorage<REAL>{ std::move( parser.entries ), parser.nCols,
+                                 parser.nRows, true },
+            std::move( parser.rowlhs ), std::move( parser.rowrhs ),
+            std::move( parser.row_flags ), true );
       problem.setVariableDomains( std::move( parser.lb4cols ),
                                   std::move( parser.ub4cols ),
                                   std::move( parser.col_flags ) );

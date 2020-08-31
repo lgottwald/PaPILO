@@ -950,7 +950,7 @@ main( int argc, char* argv[] )
       return 1;
    }
    boost::optional<Problem<double>> prob1t =
-       MpsParser<double>::loadProblem( argv[1] );
+       MpsParser<double>::loadProblem( argv[1], true );
    if( !prob1t )
    {
       fmt::print( "error loading problem {}\n", argv[1] );
@@ -975,7 +975,7 @@ main( int argc, char* argv[] )
          return 1;
       }
       boost::optional<Problem<double>> prob2t =
-          MpsParser<double>::loadProblem( argv[2] );
+          MpsParser<double>::loadProblem( argv[2], true );
       if( !prob2t )
       {
          fmt::print( "error loading problem {}\n", argv[1] );
