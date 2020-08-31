@@ -465,10 +465,15 @@ check_rows( const Problem<double>& prob1, const Problem<double>& prob2,
       fmt::print( "Problem 2: {:6} at index {:<5}\n", rnames2[i2], i2 );
    };
 
-   auto findcol = []( int col, Vec<int> perm ) {
-      return std::distance( perm.begin(),
-                            std::find( perm.begin(), perm.end(), col ) );
-   };
+   Vec<int> rpermcol1;
+   rpermcol1.resize( ncols );
+   for( int i = 0; i < ncols; ++i )
+      rpermcol1[permcol1[i]] = i;
+
+   Vec<int> rpermcol2;
+   rpermcol2.resize( ncols );
+   for( int i = 0; i < ncols; ++i )
+      rpermcol2[permcol2[i]] = i;
 
    for( int i = 0; i < nrows; ++i )
    {
@@ -558,13 +563,13 @@ check_rows( const Problem<double>& prob1, const Problem<double>& prob2,
 
       for( int x = 0; x < curr_ncols; ++x )
       {
-         int col = findcol( inds1[x], permcol1 );
+         int col = rpermcol1[inds1[x]];
          coefmap[col] = vals1[x];
       }
 
       for( int x = 0; x < curr_ncols; ++x )
       {
-         int final_index2 = findcol( inds2[x], permcol2 );
+         int final_index2 = rpermcol2[inds2[x]];
 
          // Check if same variables are defined for row
          if( coefmap.count( final_index2 ) == 0 )
