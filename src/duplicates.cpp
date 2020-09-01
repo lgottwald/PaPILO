@@ -483,7 +483,7 @@ compute_row_and_column_permutation( const Problem<double>& prob, bool verbose )
 
       ++iters;
 
-      if( verbose )
+      if( verbose && iters % 100 == 1 )
          fmt::print(
              "iter {:3}: {:6} columns and {:6} rows in non unit partitions\n",
              iters, ncols2, nrows2 );
