@@ -34,6 +34,7 @@
 #include "pdqsort/pdqsort.h"
 #include "tbb/concurrent_unordered_set.h"
 #include <algorithm>
+#include <numeric>
 #include <sys/stat.h>
 
 using namespace papilo;
@@ -177,24 +178,32 @@ compute_row_and_column_permutation( const Problem<double>& prob, bool verbose )
 
    cscstarts[ncols] = cscvals.size();
 
-   auto comp_rowvals = [&]( const std::pair<uint64_t, int>& a,
-                            const std::pair<uint64_t, int>& b ) {
-      return std::make_pair( a.first, colhashes[a.second] ) <
-             std::make_pair( b.first, colhashes[b.second] );
-   };
-
-   auto comp_colvals = [&]( const std::pair<uint64_t, int>& a,
-                            const std::pair<uint64_t, int>& b ) {
-      return std::make_pair( a.first, rowhashes[a.second] ) <
-             std::make_pair( b.first, rowhashes[b.second] );
-   };
-
    int iters = 0;
    size_t lastncols = -1;
    HashMap<uint64_t, size_t> distinct_hashes( ncols );
 
    size_t lastnrows = -1;
    HashMap<uint64_t, size_t> distinct_row_hashes( nrows );
+
+   auto comp_rowvals = [&]( const std::pair<uint64_t, int>& a,
+                            const std::pair<uint64_t, int>& b ) {
+      if( a.first < b.first )
+         return true;
+      if( b.first < a.first )
+         return false;
+
+      return colhashes[a.second] < colhashes[b.second];
+   };
+
+   auto comp_colvals = [&]( const std::pair<uint64_t, int>& a,
+                            const std::pair<uint64_t, int>& b ) {
+      if( a.first < b.first )
+         return true;
+      if( b.first < a.first )
+         return false;
+
+      return rowhashes[a.second] < rowhashes[b.second];
+   };
 
    Vec<int>& colperm = retval.second;
    colperm.resize( ncols );
@@ -209,139 +218,268 @@ compute_row_and_column_permutation( const Problem<double>& prob, bool verbose )
    size_t nrows2 = nrows;
    size_t ncols2 = ncols;
 
-   while( ncols2 != 0 )
+   Vec<int> colhashqueue = colperm;
+   Vec<uint8_t> colinqueue;
+   colinqueue.resize( colhashes.size(), 1 );
+   colhashqueue.resize( ncols );
+
+   Vec<int> rowhashqueue = rowperm;
+   Vec<uint8_t> rowinqueue;
+   rowinqueue.resize( rowhashes.size(), 1 );
+   rowhashqueue.resize( nrows );
+
+   distinct_hashes[0] = ncols;
+   distinct_row_hashes[0] = nrows;
+
+   while( ncols2 != 0 && nrows2 != 0 )
    {
-      tbb::parallel_for(
-          tbb::blocked_range<int>( 0, ncols2 ),
-          [&]( const tbb::blocked_range<int>& r ) {
-             for( int i = r.begin(); i != r.end(); ++i )
-             {
-                int col = colperm[i];
-                int start = cscstarts[col];
-                int end = cscstarts[col + 1];
-                /*
-                 * rowhashes is not initialized in first run, I think that can cause non deterministic behaviour for coeffs of same size when sorting.
-                 * You can not initialize it to 0 as that would lead to unsortability? (since a.first == b.first and rowhashes[a.second] == rowhashes[b.second]
-                 * (i do not know how pdqsort handles that though)
-                 * That also could be problematic for rowhash collisions
-                 * In both cases it is unknown (to me) which row goes first or second - leading to potential wrong permutations (some sort of backtracing here????)
-                 * If you initialize rowhashes to random non colliding values you determine a permutation beforehand, in some cases it will be very uncertain to reach
-                 * a correct permutation
-                 * Of course you can argue this is very unlikely, but depending on how pdqsort handles this ( I think ) it is not hard to construct some examples that do not work...
-                 */
-                pdqsort( &cscvals[start], &cscvals[end], comp_colvals );
-
-                Hasher<uint64_t> hasher( end - start );
-                for( int k = start; k < end; ++k )
-                {
-                   hasher.addValue( cscvals[k].first );
-                   hasher.addValue( rowhashes[cscvals[k].second] );
-                }
-
-                colhashes[col] = hasher.getHash() >> 1;
-             }
-          } );
-
-      distinct_hashes.clear();
-
-      for( size_t i = 0; i < ncols2; ++i )
-         distinct_hashes[colhashes[colperm[i]]] += 1;
-
-      pdqsort( colperm.begin(), colperm.begin() + ncols2, [&]( int a, int b ) {
-         return std::make_pair( -distinct_hashes[colhashes[a]], colhashes[a] ) <
-                std::make_pair( -distinct_hashes[colhashes[b]], colhashes[b] );
-      } );
-
-      lastncols = ncols2;
-      ncols2 = 0;
-
-      while( ncols2 < lastncols )
+      for( int col : colhashqueue )
       {
-         uint64_t hashval = colhashes[colperm[ncols2]];
-         size_t partitionsize = distinct_hashes[hashval];
-         if( partitionsize <= 1 )
+         int start = cscstarts[col];
+         int end = cscstarts[col + 1];
+
+         colinqueue[col] = 0;
+
+         pdqsort( &cscvals[start], &cscvals[end], comp_colvals );
+
+         Hasher<uint64_t> hasher( end - start );
+         for( int k = start; k < end; ++k )
+         {
+            hasher.addValue( cscvals[k].first );
+            hasher.addValue( rowhashes[cscvals[k].second] );
+         }
+         uint64_t newhash = hasher.getHash() >> 1;
+
+         if( colhashes[col] != newhash )
+         {
+            distinct_hashes[colhashes[col]] -= 1;
+            distinct_hashes[newhash] += 1;
+            colhashes[col] = newhash;
+
+            if( nrows2 < ncols2 )
+            {
+               for( int k = start; k < end; ++k )
+               {
+                  if( rowinqueue[cscvals[k].second] )
+                     continue;
+
+                  rowinqueue[cscvals[k].second] = 1;
+                  rowhashqueue.push_back( cscvals[k].second );
+               }
+            }
+         }
+      }
+
+      bool newunitcols = false;
+      for( int col : colhashqueue )
+      {
+         if( distinct_hashes[colhashes[col]] == 1 )
+         {
+            newunitcols = true;
             break;
-
-         ncols2 += partitionsize;
+         }
       }
 
-      for( size_t i = ncols2; i < lastncols; ++i )
+      colhashqueue.clear();
+
+      if( newunitcols )
       {
-         colhashes[colperm[i]] = i;
+         pdqsort( colperm.begin(), colperm.begin() + ncols2,
+                  [&]( int a, int b ) {
+                     return std::make_pair( -distinct_hashes[colhashes[a]],
+                                            colhashes[a] ) <
+                            std::make_pair( -distinct_hashes[colhashes[b]],
+                                            colhashes[b] );
+                  } );
+
+         lastncols = ncols2;
+         ncols2 = 0;
+
+         while( ncols2 < lastncols )
+         {
+            uint64_t hashval = colhashes[colperm[ncols2]];
+            size_t partitionsize = distinct_hashes[hashval];
+            if( partitionsize <= 1 )
+               break;
+
+            ncols2 += partitionsize;
+         }
+
+         for( size_t i = ncols2; i < lastncols; ++i )
+         {
+            int col = colperm[i];
+
+            distinct_hashes.erase( colhashes[col] );
+
+            // fix the hashvalue to the final position in the permutation
+            colhashes[col] = i;
+
+            // block unit partitions from being added to the hash queue again
+            colinqueue[col] = 1;
+
+            int start = cscstarts[col];
+            int end = cscstarts[col + 1];
+         }
       }
 
-      if( ncols2 == lastncols )
-      {
-         --ncols2;
-         colhashes[colperm[ncols2]] = ncols2;
-      }
-
-      if( nrows2 == 0 )
+      if( ncols2 == 0 )
          break;
 
-      tbb::parallel_for(
-          tbb::blocked_range<int>( 0, nrows2 ),
-          [&]( const tbb::blocked_range<int>& r ) {
-             for( int i = r.begin(); i != r.end(); ++i )
-             {
-                int row = rowperm[i];
-                int start = csrstarts[row];
-                int end = csrstarts[row + 1];
-                pdqsort( &csrvals[start], &csrvals[end], comp_rowvals );
-
-                Hasher<uint64_t> hasher( end - start );
-
-                for( int k = start; k < end; ++k )
-                {
-                   hasher.addValue( csrvals[k].first );
-                   hasher.addValue( colhashes[csrvals[k].second] );
-                }
-
-                rowhashes[row] = hasher.getHash() >> 1;
-             }
-          } );
-      distinct_row_hashes.clear();
-
-      for( size_t i = 0; i < nrows2; ++i )
-         distinct_row_hashes[rowhashes[rowperm[i]]] += 1;
-
-      pdqsort( rowperm.begin(), rowperm.begin() + nrows2, [&]( int a, int b ) {
-         return std::make_pair( -distinct_row_hashes[rowhashes[a]],
-                                rowhashes[a] ) <
-                std::make_pair( -distinct_row_hashes[rowhashes[b]],
-                                rowhashes[b] );
-      } );
-
-      lastnrows = nrows2;
-      nrows2 = 0;
-
-      while( nrows2 < lastnrows )
+      while( rowhashqueue.empty() && ncols2 != 0 )
       {
-         uint64_t hashval = rowhashes[rowperm[nrows2]];
-         size_t partitionsize = distinct_row_hashes[hashval];
-         if( partitionsize <= 1 )
+         --ncols2;
+
+         int col = colperm[ncols2];
+
+         distinct_hashes[colhashes[col]] -= 1;
+
+         colhashes[col] = ncols2;
+         colinqueue[col] = 1;
+
+         int start = cscstarts[col];
+         int end = cscstarts[col + 1];
+
+         for( int k = start; k < end; ++k )
+         {
+            if( rowinqueue[cscvals[k].second] )
+               continue;
+
+            rowinqueue[cscvals[k].second] = 1;
+            rowhashqueue.push_back( cscvals[k].second );
+         }
+      }
+
+      for( int row : rowhashqueue )
+      {
+         int start = csrstarts[row];
+         int end = csrstarts[row + 1];
+
+         rowinqueue[row] = 0;
+         pdqsort( &csrvals[start], &csrvals[end], comp_rowvals );
+
+         Hasher<uint64_t> hasher( end - start );
+
+         for( int k = start; k < end; ++k )
+         {
+            hasher.addValue( csrvals[k].first );
+            hasher.addValue( colhashes[csrvals[k].second] );
+         }
+
+         uint64_t newhash = hasher.getHash() >> 1;
+
+         if( rowhashes[row] != newhash )
+         {
+            distinct_row_hashes[rowhashes[row]] -= 1;
+            distinct_row_hashes[newhash] += 1;
+            rowhashes[row] = newhash;
+
+            if( ncols2 <= nrows2 )
+            {
+               for( int k = start; k < end; ++k )
+               {
+                  if( colinqueue[csrvals[k].second] )
+                     continue;
+
+                  colinqueue[csrvals[k].second] = 1;
+                  colhashqueue.push_back( csrvals[k].second );
+               }
+            }
+         }
+      }
+
+      bool newunitrows = false;
+
+      for( int row : rowhashqueue )
+      {
+         if( distinct_row_hashes[rowhashes[row]] == 1 )
+         {
+            newunitrows = true;
             break;
-
-         nrows2 += partitionsize;
+         }
       }
 
-      for( size_t i = nrows2; i < lastnrows; ++i )
+      rowhashqueue.clear();
+
+      if( newunitrows )
       {
-         rowhashes[rowperm[i]] = i;
+         pdqsort( rowperm.begin(), rowperm.begin() + nrows2,
+                  [&]( int a, int b ) {
+                     return std::make_pair( -distinct_row_hashes[rowhashes[a]],
+                                            rowhashes[a] ) <
+                            std::make_pair( -distinct_row_hashes[rowhashes[b]],
+                                            rowhashes[b] );
+                  } );
+
+         lastnrows = nrows2;
+         nrows2 = 0;
+
+         while( nrows2 < lastnrows )
+         {
+            uint64_t hashval = rowhashes[rowperm[nrows2]];
+            size_t partitionsize = distinct_row_hashes[hashval];
+            if( partitionsize <= 1 )
+               break;
+
+            nrows2 += partitionsize;
+         }
+
+         for( size_t i = nrows2; i < lastnrows; ++i )
+         {
+            int row = rowperm[i];
+
+            distinct_row_hashes.erase( rowhashes[row] );
+
+            // fix the hashvalue to the final position in the permutation
+            rowhashes[row] = i;
+
+            // block unit partitions from being added to the hash queue again
+            rowinqueue[row] = 1;
+
+            int start = csrstarts[row];
+            int end = csrstarts[row + 1];
+
+            for( int k = start; k < end; ++k )
+            {
+               if( colinqueue[csrvals[k].second] )
+                  continue;
+
+               colinqueue[csrvals[k].second] = 1;
+               colhashqueue.push_back( csrvals[k].second );
+            }
+         }
       }
 
-      if( nrows2 == lastnrows )
+      while( colhashqueue.empty() && nrows2 != 0 )
       {
          --nrows2;
-         rowhashes[rowperm[nrows2]] = nrows2;
+
+         int row = rowperm[nrows2];
+
+         distinct_row_hashes[rowhashes[row]] -= 1;
+
+         rowhashes[row] = nrows2;
+
+         // block unit partitions from being added to the hash queue again
+         rowinqueue[row] = 1;
+
+         int start = csrstarts[row];
+         int end = csrstarts[row + 1];
+
+         for( int k = start; k < end; ++k )
+         {
+            if( colinqueue[csrvals[k].second] )
+               continue;
+
+            colinqueue[csrvals[k].second] = 1;
+            colhashqueue.push_back( csrvals[k].second );
+         }
       }
 
       ++iters;
 
       if( verbose )
          fmt::print(
-             "iter {:3}: {:6} non unit col partitions and {:6} non unit row "
-             "partitions\n",
+             "iter {:3}: {:6} columns and {:6} rows in non unit partitions\n",
              iters, ncols2, nrows2 );
    }
 
