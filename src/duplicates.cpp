@@ -270,57 +270,60 @@ compute_row_and_column_permutation( const Problem<double>& prob, bool verbose )
          }
       }
 
-      bool newunitcols = false;
-      for( int col : colhashqueue )
+      if( rowhashqueue.empty() )
       {
-         if( distinct_hashes[colhashes[col]] == 1 )
+         bool newunitcols = false;
+         for( int col : colhashqueue )
          {
-            newunitcols = true;
-            break;
+            if( distinct_hashes[colhashes[col]] == 1 )
+            {
+               newunitcols = true;
+               break;
+            }
+         }
+
+         if( newunitcols )
+         {
+            pdqsort( colperm.begin(), colperm.begin() + ncols2,
+                     [&]( int a, int b ) {
+                        return std::make_pair( -distinct_hashes[colhashes[a]],
+                                               colhashes[a] ) <
+                               std::make_pair( -distinct_hashes[colhashes[b]],
+                                               colhashes[b] );
+                     } );
+
+            lastncols = ncols2;
+            ncols2 = 0;
+
+            while( ncols2 < lastncols )
+            {
+               uint64_t hashval = colhashes[colperm[ncols2]];
+               size_t partitionsize = distinct_hashes[hashval];
+               if( partitionsize <= 1 )
+                  break;
+
+               ncols2 += partitionsize;
+            }
+
+            for( size_t i = ncols2; i < lastncols; ++i )
+            {
+               int col = colperm[i];
+
+               distinct_hashes.erase( colhashes[col] );
+
+               // fix the hashvalue to the final position in the permutation
+               colhashes[col] = i;
+
+               // block unit partitions from being added to the hash queue again
+               colinqueue[col] = 1;
+
+               int start = cscstarts[col];
+               int end = cscstarts[col + 1];
+            }
          }
       }
 
       colhashqueue.clear();
-
-      if( newunitcols )
-      {
-         pdqsort( colperm.begin(), colperm.begin() + ncols2,
-                  [&]( int a, int b ) {
-                     return std::make_pair( -distinct_hashes[colhashes[a]],
-                                            colhashes[a] ) <
-                            std::make_pair( -distinct_hashes[colhashes[b]],
-                                            colhashes[b] );
-                  } );
-
-         lastncols = ncols2;
-         ncols2 = 0;
-
-         while( ncols2 < lastncols )
-         {
-            uint64_t hashval = colhashes[colperm[ncols2]];
-            size_t partitionsize = distinct_hashes[hashval];
-            if( partitionsize <= 1 )
-               break;
-
-            ncols2 += partitionsize;
-         }
-
-         for( size_t i = ncols2; i < lastncols; ++i )
-         {
-            int col = colperm[i];
-
-            distinct_hashes.erase( colhashes[col] );
-
-            // fix the hashvalue to the final position in the permutation
-            colhashes[col] = i;
-
-            // block unit partitions from being added to the hash queue again
-            colinqueue[col] = 1;
-
-            int start = cscstarts[col];
-            int end = cscstarts[col + 1];
-         }
-      }
 
       if( ncols2 == 0 )
          break;
@@ -387,67 +390,70 @@ compute_row_and_column_permutation( const Problem<double>& prob, bool verbose )
          }
       }
 
-      bool newunitrows = false;
-
-      for( int row : rowhashqueue )
+      if( colhashqueue.empty() )
       {
-         if( distinct_row_hashes[rowhashes[row]] == 1 )
+         bool newunitrows = false;
+
+         for( int row : rowhashqueue )
          {
-            newunitrows = true;
-            break;
+            if( distinct_row_hashes[rowhashes[row]] == 1 )
+            {
+               newunitrows = true;
+               break;
+            }
+         }
+
+         if( newunitrows )
+         {
+            pdqsort(
+                rowperm.begin(), rowperm.begin() + nrows2, [&]( int a, int b ) {
+                   return std::make_pair( -distinct_row_hashes[rowhashes[a]],
+                                          rowhashes[a] ) <
+                          std::make_pair( -distinct_row_hashes[rowhashes[b]],
+                                          rowhashes[b] );
+                } );
+
+            lastnrows = nrows2;
+            nrows2 = 0;
+
+            while( nrows2 < lastnrows )
+            {
+               uint64_t hashval = rowhashes[rowperm[nrows2]];
+               size_t partitionsize = distinct_row_hashes[hashval];
+               if( partitionsize <= 1 )
+                  break;
+
+               nrows2 += partitionsize;
+            }
+
+            for( size_t i = nrows2; i < lastnrows; ++i )
+            {
+               int row = rowperm[i];
+
+               distinct_row_hashes.erase( rowhashes[row] );
+
+               // fix the hashvalue to the final position in the permutation
+               rowhashes[row] = i;
+
+               // block unit partitions from being added to the hash queue again
+               rowinqueue[row] = 1;
+
+               int start = csrstarts[row];
+               int end = csrstarts[row + 1];
+
+               for( int k = start; k < end; ++k )
+               {
+                  if( colinqueue[csrvals[k].second] )
+                     continue;
+
+                  colinqueue[csrvals[k].second] = 1;
+                  colhashqueue.push_back( csrvals[k].second );
+               }
+            }
          }
       }
 
       rowhashqueue.clear();
-
-      if( newunitrows )
-      {
-         pdqsort( rowperm.begin(), rowperm.begin() + nrows2,
-                  [&]( int a, int b ) {
-                     return std::make_pair( -distinct_row_hashes[rowhashes[a]],
-                                            rowhashes[a] ) <
-                            std::make_pair( -distinct_row_hashes[rowhashes[b]],
-                                            rowhashes[b] );
-                  } );
-
-         lastnrows = nrows2;
-         nrows2 = 0;
-
-         while( nrows2 < lastnrows )
-         {
-            uint64_t hashval = rowhashes[rowperm[nrows2]];
-            size_t partitionsize = distinct_row_hashes[hashval];
-            if( partitionsize <= 1 )
-               break;
-
-            nrows2 += partitionsize;
-         }
-
-         for( size_t i = nrows2; i < lastnrows; ++i )
-         {
-            int row = rowperm[i];
-
-            distinct_row_hashes.erase( rowhashes[row] );
-
-            // fix the hashvalue to the final position in the permutation
-            rowhashes[row] = i;
-
-            // block unit partitions from being added to the hash queue again
-            rowinqueue[row] = 1;
-
-            int start = csrstarts[row];
-            int end = csrstarts[row + 1];
-
-            for( int k = start; k < end; ++k )
-            {
-               if( colinqueue[csrvals[k].second] )
-                  continue;
-
-               colinqueue[csrvals[k].second] = 1;
-               colhashqueue.push_back( csrvals[k].second );
-            }
-         }
-      }
 
       while( colhashqueue.empty() && nrows2 != 0 )
       {
@@ -664,15 +670,6 @@ check_rows( const Problem<double>& prob1, const Problem<double>& prob2,
           rflags2[i2row].test( RowFlag::kIntegral ) )
       {
          fmt::print( "Row is Integral in only one of both problems!\n" );
-         printConstraintsAndIndex( i1row, i2row );
-         return false;
-      }
-
-      // needed? probably not
-      if( rflags1[i1row].test( RowFlag::kRedundant ) !=
-          rflags2[i2row].test( RowFlag::kRedundant ) )
-      {
-         fmt::print( "Row is redundant in only one of both problems!\n" );
          printConstraintsAndIndex( i1row, i2row );
          return false;
       }
